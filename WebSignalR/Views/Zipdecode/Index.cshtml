@@ -1,0 +1,208 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <style>
+        input,
+        canvas {
+            position: absolute;
+        }
+
+        input {
+            background: transparent;
+            border: none;
+            margin: 10px 384px;
+            width: 180px;
+            font-size: 18px;
+            padding: 6px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <input autofocus maxlength=5 placeholder="type a zipcode">
+    <div class="container"></div>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+   
+    <script src="/Scripts/jquery-1.10.2.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.0.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+
+        signalR = function () {
+            // Reference the auto-generated proxy for the hub.
+            var hub = $.connection.colorHub;
+
+
+            function hubStart() {
+                hubHandlers();
+                // Set a query string value before calling the start method (with the generated proxy)
+                $.connection.hub.qs = { 'version': '1.0' };
+                $.connection.hub.logging = true;
+                $.connection.hub.start({ transport: ['webSockets', 'longPolling', 'foreverFrame', 'serverSentEvents'] }).done(function () {
+                    // Client code that displays the transport method used by a connection
+                    console.log("Connected, transport = " + $.connection.hub.transport.name);
+                    hubServerTopThree();
+                    hubServerIncrement(0);
+                });
+
+                hubClients();
+            }
+
+            function hubServerTopThree() {
+                hub.server.topThree();
+            }
+
+            function hubServerIncrement(count) {
+                hub.server.increment(count);
+            }
+
+            // Create a function that the hub can call back to display messages.
+            function hubClients() {
+
+                hub.client.addColorToPage = function (hex) {
+                    console.log(hex);
+                    $("<div/>", { 'class': 'colorValue' }).css({ 'float': 'left', 'width': '50px', 'height': '50px', 'background-color': '#' + hex }).appendTo($('.container.body-content'));
+                };
+
+
+                hub.client.incrementCounter = function (count) {
+                    console.log(count);
+                    $("input").attr("value", count);
+
+                    var width = 960, height = 500;
+
+                    var projection = d3.geo.albersUsa()
+                        .scale(1000)
+                        .translate([width / 2, height / 2]);
+
+
+
+                    d3.tsv("http://localhost:51412/Content/zipcodes.tsv", function (error, zipcodes) {
+                        var zip0;
+
+                        // Compute projected locations of each zipcode.
+                        zipcodes.forEach(function (d) {
+                            var p = projection([+d.lon, +d.lat]);
+                            if (p) d.x = Math.round(p[0]), d.y = Math.round(p[1]);
+                        });
+
+                        var input = d3.select("input")
+                            .on("cut", function () { setTimeout(change, 10); })
+                            .on("paste", function () { setTimeout(change, 10); })
+                            .on("change", change)
+                            .on("keyup", change);
+
+                        change();
+
+                        function change() {
+                            var zip1 = input.property("value");
+                            if (zip0 === zip1) return;
+                            zip0 = zip1;
+
+                            // Select old canvases to remove after fade.
+                            var canvas0 = d3.selectAll("canvas");
+
+                            // Add a new canvas, initially with opacity 0, to show the new zipcodes.
+                            var canvas1 = d3.select("body").insert("canvas", "input")
+                                .attr("width", width)
+                                .attr("height", height)
+                                .style("opacity", 0);
+
+                            var context = canvas1.node().getContext("2d");
+                            context.fillStyle = "#fff";
+                            context.fillRect(0, 0, width, height);
+
+                            // Render the inactive zipcodes.
+                            context.globalAlpha = .4;
+                            context.fillStyle = zip1 ? "#BBB" : (zip1 = "*", "#000");
+                            zipcodes.forEach(function (d) {
+                                for (var i = 0, n = zip1.length; i < n; ++i) {
+                                    if (d.zip[i] !== zip1[i]) {
+                                        context.fillRect(d.x, d.y, 1, 1);
+                                        return;
+                                    }
+                                }
+                            });
+
+                            // Render the active zipcodes.
+                            context.globalAlpha = 1;
+                            context.fillStyle = "#f00";
+                            zipcodes.forEach(function (d) {
+                                for (var i = 0, n = zip1.length; i < n; ++i) {
+                                    if (d.zip[i] !== zip1[i]) {
+                                        return;
+                                    }
+                                }
+                                context.fillRect(d.x, d.y, 1, 1);
+                            });
+
+                            // Use a transition to fade-in the new canvas.
+                            // When this transition finishes, remove the old canvases.
+                            canvas1.transition()
+                                .duration(350)
+                                .style("opacity", 1)
+                                .each("end", function () { canvas0.remove(); });
+                        }
+                    });
+
+                    /*
+                    setTimeout(function () {
+                        // Do something after 5 seconds
+                        hubServerIncrement(count);
+                    }, 1000);
+                    */
+
+                    
+                }
+
+            }
+
+            function hubHandlers() {
+                // starting: Raised before any data is sent over the connection.
+                $.connection.hub.starting(function () {
+                    console.log('starting: Raised before any data is sent over the connection.');
+                });
+                // received: Raised when any data is received on the connection. Provides the received data.
+                $.connection.hub.received(function () {
+                    console.log('received: Raised when any data is received on the connection. Provides the received data.');
+                });
+                // connectionSlow: Raised when the client detects a slow or frequently dropping connection.
+                $.connection.hub.connectionSlow(function () {
+                    console.log('We are currently experiencing difficulties with the connection.');
+                });
+                // reconnecting: Raised when the underlying transport begins reconnecting.
+                $.connection.hub.reconnecting(function () {
+                    console.log('reconnecting: Raised when the underlying transport begins reconnecting.');
+                });
+                // reconnected: Raised when the underlying transport has reconnected.
+                $.connection.hub.reconnected(function () {
+                    console.log('reconnected: Raised when the underlying transport has reconnected.');
+                });
+                // stateChanged: Raised when the connection state changes. Provides the old state and the new state (Connecting, Connected, Reconnecting, or Disconnected).
+                $.connection.hub.stateChanged(function () {
+                    console.log('stateChanged: Raised when the connection state changes. Provides the old state and the new state (Connecting, Connected, Reconnecting, or Disconnected).');
+                });
+                // disconnected: Raised when the connection has disconnected.
+                $.connection.hub.disconnected(function () {
+                    console.log('disconnected: Raised when the connection has disconnected.');
+                });
+                // Add an error handler
+                $.connection.hub.error(function (error) {
+                    console.log('SignalR error: ' + error);
+                });
+            }
+
+            return {
+                hubStart: hubStart,
+            }
+        }();
+
+        $(function () {
+            signalR.hubStart();
+        });
+    </script>
+
+</body>
