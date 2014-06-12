@@ -16,12 +16,7 @@ namespace WebSignalR.Hubs
         {
             Clients.All.hello();
         }
-
-        public void Increment(int count)
-        {
-            Clients.All.incrementCounter(count+10);
-        }
-
+        
         public void TopThree()
         {
             var colorList = new List<ColorModel>

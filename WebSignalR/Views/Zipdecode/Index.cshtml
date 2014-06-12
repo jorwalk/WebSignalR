@@ -23,9 +23,7 @@
 </head>
 <body>
     <input autofocus maxlength=5 placeholder="type a zipcode">
-    <div class="container"></div>
     <script src="http://d3js.org/d3.v3.min.js"></script>
-   
     <script src="/Scripts/jquery-1.10.2.js"></script>
     <script src="~/Scripts/jquery.signalR-2.0.3.min.js"></script>
     <script src="~/signalr/hubs"></script>
@@ -33,52 +31,38 @@
 
         signalR = function () {
             // Reference the auto-generated proxy for the hub.
-            var hub = $.connection.colorHub;
-
+            var hub = $.connection.zipdecodeHub;
 
             function hubStart() {
                 hubHandlers();
+
                 // Set a query string value before calling the start method (with the generated proxy)
                 $.connection.hub.qs = { 'version': '1.0' };
                 $.connection.hub.logging = true;
                 $.connection.hub.start({ transport: ['webSockets', 'longPolling', 'foreverFrame', 'serverSentEvents'] }).done(function () {
-                    // Client code that displays the transport method used by a connection
                     console.log("Connected, transport = " + $.connection.hub.transport.name);
-                    hubServerTopThree();
-                    hubServerIncrement(0);
+                    hubServerRandom();
+                    
                 });
-
                 hubClients();
             }
 
-            function hubServerTopThree() {
-                hub.server.topThree();
-            }
-
-            function hubServerIncrement(count) {
-                hub.server.increment(count);
+            function hubServerRandom() {
+                hub.server.random();
             }
 
             // Create a function that the hub can call back to display messages.
             function hubClients() {
 
-                hub.client.addColorToPage = function (hex) {
-                    console.log(hex);
-                    $("<div/>", { 'class': 'colorValue' }).css({ 'float': 'left', 'width': '50px', 'height': '50px', 'background-color': '#' + hex }).appendTo($('.container.body-content'));
-                };
-
-
-                hub.client.incrementCounter = function (count) {
-                    console.log(count);
-                    $("input").attr("value", count);
+                hub.client.addRandom = function (value) {
+                    
+                    $("input").attr("value", value);
 
                     var width = 960, height = 500;
 
                     var projection = d3.geo.albersUsa()
                         .scale(1000)
                         .translate([width / 2, height / 2]);
-
-
 
                     d3.tsv("http://localhost:51412/Content/zipcodes.tsv", function (error, zipcodes) {
                         var zip0;
@@ -148,16 +132,11 @@
                         }
                     });
 
-                    /*
                     setTimeout(function () {
                         // Do something after 5 seconds
-                        hubServerIncrement(count);
+                        hubServerRandom();
                     }, 1000);
-                    */
-
-                    
                 }
-
             }
 
             function hubHandlers() {
@@ -195,9 +174,7 @@
                 });
             }
 
-            return {
-                hubStart: hubStart,
-            }
+            return { hubStart: hubStart }
         }();
 
         $(function () {
