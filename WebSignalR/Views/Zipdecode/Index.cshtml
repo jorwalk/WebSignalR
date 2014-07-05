@@ -5,20 +5,41 @@
 <meta charset="utf-8">
 <head>
     <style>
-        input,
-        canvas {
-            position: absolute;
+        
+        body {
+            background-color: #104E8B;
         }
-
-        input {
-            background: transparent;
+         input,
+         canvas {
+             position: absolute;
+         }
+         input {
+            background-color: #104E8B;
             border: none;
+            color: #fff;
             margin: 10px 384px;
             width: 180px;
             font-size: 18px;
             padding: 6px;
             text-align: center;
         }
+
+        ::-webkit-input-placeholder {
+            color: #fff;
+        }
+
+        :-moz-placeholder { /* Firefox 18- */
+            color: #fff;
+        }
+
+        ::-moz-placeholder { /* Firefox 19+ */
+            color: #fff;
+        }
+
+        :-ms-input-placeholder {
+            color: #fff;
+        }
+
     </style>
 </head>
 <body>
@@ -96,12 +117,12 @@
                                 .style("opacity", 0);
 
                             var context = canvas1.node().getContext("2d");
-                            context.fillStyle = "#fff";
+                            context.fillStyle = "#104E8B";
                             context.fillRect(0, 0, width, height);
 
                             // Render the inactive zipcodes.
                             context.globalAlpha = .4;
-                            context.fillStyle = zip1 ? "#BBB" : (zip1 = "*", "#000");
+                            context.fillStyle = zip1 ? "#FFF" : (zip1 = "*", "#000");
                             zipcodes.forEach(function (d) {
                                 for (var i = 0, n = zip1.length; i < n; ++i) {
                                     if (d.zip[i] !== zip1[i]) {
@@ -181,5 +202,4 @@
             signalR.hubStart();
         });
     </script>
-
 </body>

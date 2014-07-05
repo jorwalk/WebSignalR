@@ -1,0 +1,124 @@
+﻿   <article class="container">
+       <aside class="col-md-4"><h2>discussion</h2><ul id="discussion"></ul></aside>
+       <div class="col-md-8">
+           @*<section class="row">
+               <h2>user information</h2>
+               <form role="form">
+                   <div class="form-group">
+                       <label for="inputUsername">username</label>
+                       <input type="email" class="form-control" id="inputUsername" placeholder="Enter username">
+                   </div>
+                   <div class="form-group">
+                       <label for="inputEmail">Email address</label>
+                       <input type="email" class="form-control" id="inputEmail" placeholder="Enter email">
+                   </div>
+                   <button id="joinRoom" type="submit" class="btn btn-default">Join Room</button>
+               </form>
+           </section>*@
+           <section class="row">
+               <div class="col-md-4"><h1 id="a"></h1></div>
+               <div class="col-md-4"><h2 id="b"></h2></div>
+               <div class="col-md-4">
+                   <div class="form-group">
+                       <input id="sum" name="sum" class="form-control" type="number" />
+                       
+                   </div>
+                   <button id="joinRoom" type="submit" class="btn btn-default">sum</button>
+               </div>
+            </section>  
+       </div>
+   </article>
+@section scripts {
+    <script src="/Scripts/jquery-1.10.2.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.0.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+
+        signalR = function() {
+            // Reference the auto-generated proxy for the hub.
+            var hub = $.connection.mathHub;
+
+            function hubStart() {
+                hubHandlers();
+                // Set a query string value before calling the start method (with the generated proxy)
+                $.connection.hub.qs = { 'version': '1.0' };
+                $.connection.hub.logging = true;
+                $.connection.hub.start({ transport: ['webSockets', 'longPolling', 'foreverFrame', 'serverSentEvents'] }).done(function() {
+                    // Client code that displays the transport method used by a connection
+                    console.log("Connected, transport = " + $.connection.hub.transport.name);
+                    createRandomTwoDigits();
+                });
+                hubClients();
+                hubActions();
+            }
+
+            function createRandomTwoDigits() {
+                hub.server.createRandomTwoDigits();
+            }
+
+            // Create a function that the hub can call back to display messages.
+            function hubClients() {
+                hub.client.showRandomTwoDigits = function(a, b) {
+                    $("#a").html(a);
+                    $("#b").html(b);
+                }
+
+                hub.client.returnAdd = function(sum) {
+                    console.log(sum);
+                }
+            }
+
+            function hubActions() {
+                $("#sum").on("click", function(e) {
+                    e.preventDefault();
+                    var a = $("#a").html();
+                    var b = $("#b").html();
+                    var sum = hub.server.add(parseInt(a), parseInt(b));
+                });
+            }
+
+            function hubHandlers() {
+                // starting: Raised before any data is sent over the connection.
+                $.connection.hub.starting(function() {
+                    console.log('starting: Raised before any data is sent over the connection.');
+                });
+                // received: Raised when any data is received on the connection. Provides the received data.
+                $.connection.hub.received(function() {
+                    console.log('received: Raised when any data is received on the connection. Provides the received data.');
+                });
+                // connectionSlow: Raised when the client detects a slow or frequently dropping connection.
+                $.connection.hub.connectionSlow(function() {
+                    console.log('We are currently experiencing difficulties with the connection.');
+                });
+                // reconnecting: Raised when the underlying transport begins reconnecting.
+                $.connection.hub.reconnecting(function() {
+                    console.log('reconnecting: Raised when the underlying transport begins reconnecting.');
+                });
+                // reconnected: Raised when the underlying transport has reconnected.
+                $.connection.hub.reconnected(function() {
+                    console.log('reconnected: Raised when the underlying transport has reconnected.');
+                });
+                // stateChanged: Raised when the connection state changes. Provides the old state and the new state (Connecting, Connected, Reconnecting, or Disconnected).
+                $.connection.hub.stateChanged(function() {
+                    console.log('stateChanged: Raised when the connection state changes. Provides the old state and the new state (Connecting, Connected, Reconnecting, or Disconnected).');
+                });
+                // disconnected: Raised when the connection has disconnected.
+                $.connection.hub.disconnected(function() {
+                    console.log('disconnected: Raised when the connection has disconnected.');
+                });
+                // Add an error handler
+                $.connection.hub.error(function(error) {
+                    console.log('SignalR error: ' + error);
+                });
+            }
+
+            return {
+                hubStart: hubStart,
+            }
+        }();
+
+        $(function() {
+            signalR.hubStart();
+        });
+    </script>
+}

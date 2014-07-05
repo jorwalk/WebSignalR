@@ -179,6 +179,7 @@
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\ColorController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\MathController.cs" />
     <Compile Include="Controllers\ResponsiveController.cs" />
     <Compile Include="Controllers\ZipdecodeController.cs" />
     <Compile Include="dal\ColorData.cs" />
@@ -187,6 +188,7 @@
     </Compile>
     <Compile Include="Hubs\ChatHub.cs" />
     <Compile Include="Hubs\ColorHub.cs" />
+    <Compile Include="Hubs\MathHub.cs" />
     <Compile Include="Hubs\ResponsiveHub.cs" />
     <Compile Include="Hubs\ZipdecodeHub.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -250,6 +252,7 @@
     <Content Include="Views\Responsive\Index.cshtml" />
     <Content Include="Views\Color\Index.cshtml" />
     <Content Include="Views\Zipdecode\Index.cshtml" />
+    <Content Include="Views\Math\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

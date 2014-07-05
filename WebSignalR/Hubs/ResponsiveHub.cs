@@ -5,6 +5,7 @@ using Microsoft.AspNet.SignalR;
 
 namespace WebSignalR.Hubs
 {
+
     public class ResponsiveHub : Hub
     {
         public override Task OnConnected()
@@ -16,22 +17,15 @@ namespace WebSignalR.Hubs
             }
             return base.OnConnected();
         }
-        
-        public void MyWebClient()
-        {
-            var client = new WebClient();
-            var downloadString = client.DownloadString("http://www.jordanwalker.net");
-            Clients.All.webClient(downloadString);
-        }
-
+ 
         public void Send(string name, string message)
         {
             Clients.All.addNewMessageToPage(name, message);
         }
 
-        public void MyGeo(string timestamp, decimal latitude)
+        public void MyGeo(string timestamp, int accuracy, decimal latitude, decimal longitude)
         {
-           Clients.All.setLatitudeLongitude(timestamp, latitude);
+            Clients.All.setLatitudeLongitude(timestamp, accuracy, latitude, longitude);
         }
 
 

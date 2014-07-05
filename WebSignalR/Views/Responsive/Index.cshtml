@@ -1,19 +1,20 @@
 ﻿@{
     ViewBag.Title = "Responsive";
 }
+
 <h2></h2>
 <div class="container">
     <button id="getPositionButton">Get</button>
     <button id="watchPositionButton">Watch</button>
     <button id="stopButton">Stop</button>
-
     <div id="geo"></div>
+    <div id="map"></div>
 
     <input type="text" id="message" />
     <input type="button" id="sendmessage" value="Send" />
     <input type="hidden" id="displayname" />
     <ul id="discussion"></ul>
-    
+
     <div id="website" class="col-md-12"></div>
 
 </div>
@@ -27,41 +28,34 @@
     <!--SignalR script to update the chat page and send messages.-->
     <script>
 
-        signalR = function() {
+        signalR = function () {
             // Reference the auto-generated proxy for the hub.
             var hub = $.connection.responsiveHub;
 
             function registerClients() {
                 // Create a function that the hub can call back to display messages.
-                hub.client.addNewMessageToPage = function(name, message) {
+                hub.client.addNewMessageToPage = function (name, message) {
                     // Add the message to the page.
                     $('#discussion').append('<li><strong>' + htmlEncode(name)
                         + '</strong>: ' + htmlEncode(message) + '</li>');
                 };
 
-                hub.client.setLatitudeLongitude = function(timestamp, latitude) {
+                hub.client.setLatitudeLongitude = function (timestamp, accuracy, latitude, longitude) {
                     $('#discussion').append('<li><strong>' + htmlEncode(timestamp)
-                        + '</strong>: Lat:' + htmlEncode(latitude) + '</li>');
+                        + '</strong> accuracy:' + accuracy + ': Lat:' + htmlEncode(latitude) + ' Long:' + htmlEncode(longitude) + '</li>');
                 }
-
-                hub.client.webClient = function(html) {
-                    console.log("html", html);
-                    $('<iframe id="someId" class="col-md-12" height="800"/>').appendTo('.container.body-content');
-                    $('#someId').contents().find('html').append(html);
-                }
-
             }
 
             function init() {
                 // Set a query string value before calling the start method (with the generated proxy)
                 $.connection.hub.qs = { 'version': '1.0' };
                 $.connection.hub.logging = true;
-                $.connection.hub.start({ transport: ['webSockets', 'longPolling', 'foreverFrame', 'serverSentEvents'] }).done(function() {
+                $.connection.hub.start({ transport: ['webSockets', 'longPolling', 'foreverFrame', 'serverSentEvents'] }).done(function () {
                     // Client code that displays the transport method used by a connection
                     console.log("Connected, transport = " + $.connection.hub.transport.name);
 
 
-                    $('#sendmessage').click(function() {
+                    $('#sendmessage').click(function () {
                         // Call the Send method on the hub.
                         sendHub();
                         // Clear text box and reset focus for next comment.
@@ -75,8 +69,28 @@
             function setPosition(position) {
                 console.log('position', position);
                 console.log(parseInt(position.timestamp));
-                hub.server.myGeo(position.timestamp, position.coords.latitude);
+                hub.server.myGeo(
+                    position.timestamp,
+                    position.coords.accuracy,
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
+                createStaticMap(position.coords.latitude, position.coords.longitude);
+
             }
+
+            function createStaticMap(latCoord, longCoord) {
+                var horizontalValue = 640;
+                var verticalValue = 640;
+                var zoom = 12;
+                var size = horizontalValue + "x" + verticalValue;
+                var url = "http://maps.googleapis.com/maps/api/staticmap?center=" +
+                    latCoord + "," + longCoord + "&size=" + size + "&zoom=" + zoom + "&markers=color:blue%7Clabel:S%7C11211%7C11206%7C11222";
+                var img = $("<img/>", { 'src': url });
+                console.log(img);
+                $("#map").html(img);
+            }
+
 
             function sendHub() {
                 hub.server.send($('#displayname').val(), $('#message').val());
@@ -86,49 +100,49 @@
 
             function handlers() {
                 // starting: Raised before any data is sent over the connection.
-                $.connection.hub.starting(function() {
+                $.connection.hub.starting(function () {
                     console.log('starting: Raised before any data is sent over the connection.');
                 });
                 // received: Raised when any data is received on the connection. Provides the received data.
-                $.connection.hub.received(function() {
+                $.connection.hub.received(function () {
                     console.log('received: Raised when any data is received on the connection. Provides the received data.');
                 });
                 // connectionSlow: Raised when the client detects a slow or frequently dropping connection.
-                $.connection.hub.connectionSlow(function() {
+                $.connection.hub.connectionSlow(function () {
                     console.log('We are currently experiencing difficulties with the connection.');
                 });
                 // reconnecting: Raised when the underlying transport begins reconnecting.
-                $.connection.hub.reconnecting(function() {
+                $.connection.hub.reconnecting(function () {
                     console.log('reconnecting: Raised when the underlying transport begins reconnecting.');
                 });
                 // reconnected: Raised when the underlying transport has reconnected.
-                $.connection.hub.reconnected(function() {
+                $.connection.hub.reconnected(function () {
                     console.log('reconnected: Raised when the underlying transport has reconnected.');
                 });
                 // stateChanged: Raised when the connection state changes. Provides the old state and the new state (Connecting, Connected, Reconnecting, or Disconnected).
-                $.connection.hub.stateChanged(function() {
+                $.connection.hub.stateChanged(function () {
                     console.log('stateChanged: Raised when the connection state changes. Provides the old state and the new state (Connecting, Connected, Reconnecting, or Disconnected).');
                 });
                 // disconnected: Raised when the connection has disconnected.
-                $.connection.hub.disconnected(function() {
+                $.connection.hub.disconnected(function () {
                     console.log('disconnected: Raised when the connection has disconnected.');
                 });
                 // Add an error handler
-                $.connection.hub.error(function(error) {
+                $.connection.hub.error(function (error) {
                     console.log('SignalR error: ' + error);
                 });
             }
 
             return {
-                init: function() {
+                init: function () {
                     init();
                     registerClients();
                     handlers();
                 },
-                setPosition: function(position) { setPosition(position); }
+                setPosition: function (position) { setPosition(position); }
             }
         }();
-        geoTarget = function() {
+        geoTarget = function () {
             var myPosition = null;
 
             function init() {
@@ -136,16 +150,16 @@
             }
 
             function bindClicks() {
-                $('#getPositionButton').bind('click', function() {
+                $('#getPositionButton').bind('click', function () {
                     $.geolocation.get({ win: signalR.setPosition, fail: noLocation });
                 });
 
-                $('#watchPositionButton').bind('click', function() {
+                $('#watchPositionButton').bind('click', function () {
                     // alertMyPosition is called each time the user's position changes
                     myPosition = $.geolocation.watch({ win: signalR.setPosition });
                 });
 
-                $('#stopButton').bind('click', function() {
+                $('#stopButton').bind('click', function () {
                     $.geolocation.stop(myPosition);
                 });
             }
@@ -154,7 +168,7 @@
                 $('#geo').text("No location info available. Error code: " + error.code);
             }
 
-            return { init: function() { init(); } }
+            return { init: function () { init(); } }
         }();
 
         function htmlEncode(value) {
@@ -162,7 +176,7 @@
             return encodedValue;
         }
 
-        $(function() {
+        $(function () {
             $('#displayname').val("JRW");
             signalR.init();
             geoTarget.init();
